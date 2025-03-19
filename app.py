@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import openai
+import stripe
 from flask_cors import CORS
 import os
 
@@ -7,16 +8,22 @@ import os
 app = Flask(__name__)
 CORS(app) # Allow frontend requests
 
-# Load OpenAI API Key
+# Load API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
 # Manually set API Key (only for local testing, REMOVE this for deployment)
 if not openai.api_key:
-    openai.api_key = "your-api-key-here" # Replace with your actual API key
+    openai.api_key = "your-openai-api-key-here"
+
+if not stripe.api_key:
+    stripe.api_key = "your-stripe-secret-key-here"
+
 
 @app.route('/')
 def home():
     return render_template("index.html") # Serve frontend
+
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
@@ -48,6 +55,41 @@ def generate_content():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+
+
+# Route for creating a Stripe Checkout session
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': 'AI Content Ideas'},
+                    'unit_amount': 500, # $5.00 in cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url="https://your-app-name.onrender.com/success",
+            cancel_url="https://your-app-name.onrender.com/cancel",
+        )
+        return jsonify({"url": session.url})
+
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+
+# Success and Cancel routes
+@app.route('/success')
+def success():
+    return "Payment Successful! Thank you for your purchase."
+
+@app.route('/cancel')
+def cancel():
+    return "Payment Cancelled. Please try again."
+
 
 # Run Flask app
 if __name__ == '__main__':
