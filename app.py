@@ -72,8 +72,8 @@ def create_checkout_session():
                 'quantity': 1,
             }],
             mode='payment',
-            success_url="https://your-app-name.onrender.com/success",
-            cancel_url="https://your-app-name.onrender.com/cancel",
+            success_url="https://quickfix-xidb.onrender.com/success",
+            cancel_url="https://quickfix-xidb.onrender.com/cancel",
         )
         return jsonify({"url": session.url})
 
@@ -84,7 +84,7 @@ def create_checkout_session():
 # Success and Cancel routes
 @app.route('/success')
 def success():
-    return "Payment Successful! Thank you for your purchase."
+    return  "<h1>✅ Payment Successful! Thank you for your purchase.</h1>"
 
 @app.route('/cancel')
 def cancel():
