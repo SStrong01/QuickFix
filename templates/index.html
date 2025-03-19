@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Idea Generator</title>
+    
+    <!-- Bootstrap CSS (For Modern UI) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            font-size: 18px;
+            border-radius: 5px;
+            width: 100%;
+        }
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+        .result-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container text-center">
+        <h2 class="mb-4">✨ AI Content Idea Generator ✨</h2>
+        <p>Enter a niche and select a platform to generate viral content ideas!</p>
+        
+        <input type="text" id="niche" class="form-control mb-3" placeholder="Enter Niche (e.g., Fitness)" required>
+        
+        <select id="platform" class="form-control mb-3">
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+            <option value="YouTube">YouTube</option>
+        </select>
+        
+        <button onclick="generateIdeas()" class="btn btn-custom">🚀 Generate Ideas</button>
+
+        <div id="results" class="result-box mt-4" style="display:none;">
+            <h4>Generated Content Ideas:</h4>
+            <ul id="ideasList"></ul>
+        </div>
+    </div>
+
+    <!-- Bootstrap & JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        async function generateIdeas() {
+            let niche = document.getElementById("niche").value;
+            let platform = document.getElementById("platform").value;
+
+            if (!niche) {
+                alert("Please enter a niche!");
+                return;
+            }
+
+            document.getElementById("results").style.display = "none";
+
+            let response = await fetch("/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ niche: niche, platform: platform })
+            });
+
+            let data = await response.json();
+            if (data.status === "success") {
+                let ideasHTML = "";
+                data.ideas.forEach(idea => {
+                    ideasHTML += `<li>${idea}</li>`;
+                });
+                document.getElementById("ideasList").innerHTML = ideasHTML;
+                document.getElementById("results").style.display = "block";
+            } else {
+                document.getElementById("results").innerHTML = "<p style='color:red;'>Error: " + data.message + "</p>";
+            }
+        }
+    </script>
+
+</body>
+</html>
