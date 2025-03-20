@@ -1,24 +1,40 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session
 import openai
 import stripe
 from flask_cors import CORS
 import os
+import json
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app) # Allow frontend requests
 
-# Set a secret key for sessions
+# Set a secret key for sessions (optional)
 app.secret_key = "supersecretkey"
 
 # Load API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
+# Path for storing AI-generated ideas
+IDEAS_FILE = "ideas.json"
+
+def save_ideas(ideas):
+    """Save AI-generated ideas to a file for later retrieval."""
+    with open(IDEAS_FILE, "w") as f:
+        json.dump(ideas, f)
+
+def load_ideas():
+    """Load AI-generated ideas from the file."""
+    try:
+        with open(IDEAS_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
 @app.route('/')
 def home():
-    # Retrieve stored AI-generated ideas if they exist
-    ideas = session.get("ideas", None)
+    ideas = load_ideas()
     return render_template("index.html", ideas=ideas)
 
 @app.route('/generate', methods=['POST'])
@@ -43,14 +59,13 @@ def generate_content():
 
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
 
-        # Store ideas in session before payment
-        session["ideas"] = ideas
+        # Save ideas to a file before payment
+        save_ideas(ideas)
 
         return jsonify({"status": "success", "ideas": ideas})
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
-
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -74,12 +89,11 @@ def create_checkout_session():
     except Exception as e:
         return jsonify(error=str(e)), 500
 
-
 @app.route('/success')
 def success():
-    # Retrieve the stored AI-generated ideas
-    ideas = session.get("ideas", ["No ideas found. Please generate new ones."])
-    
+    # Retrieve stored AI-generated ideas
+    ideas = load_ideas()
+
     return f"""
     <html>
     <head>
@@ -170,6 +184,5 @@ def cancel():
     </html>
     '''
 
-# Run Flask app
 if __name__ == '__main__':
     app.run(debug=True)
