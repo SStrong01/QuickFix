@@ -12,14 +12,7 @@ CORS(app) # Allow frontend requests
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
-# Manually set API Key (only for local testing, REMOVE this for deployment)
-if not openai.api_key:
-    openai.api_key = "your-openai-api-key-here"
-
-if not stripe.api_key:
-    stripe.api_key = "your-stripe-secret-key-here"
-
-
+# Routes
 @app.route('/')
 def home():
     return render_template("index.html") # Serve frontend
@@ -32,14 +25,11 @@ def generate_content():
         niche = data.get("niche", "general")
         platform = data.get("platform", "Instagram")
 
-        # Ensure API key is available
         if not openai.api_key:
             return jsonify({"status": "error", "message": "OpenAI API key is missing!"})
 
-        # Generate AI prompt
         prompt = f"Generate 5 viral content ideas for {platform} in the {niche} niche."
 
-        # Call OpenAI API
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -48,7 +38,6 @@ def generate_content():
             ]
         )
 
-        # Extract generated ideas
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
 
         return jsonify({"status": "success", "ideas": ideas})
@@ -67,7 +56,7 @@ def create_checkout_session():
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {'name': 'AI Content Ideas'},
-                    'unit_amount': 500, # $5.00 in cents
+                    'unit_amount': 500, # $5.00
                 },
                 'quantity': 1,
             }],
@@ -81,15 +70,86 @@ def create_checkout_session():
         return jsonify(error=str(e)), 500
 
 
-# Success and Cancel routes
+# Success Page with "Go Back" Button
 @app.route('/success')
 def success():
-    return  "<h1>✅ Payment Successful! Thank you for your purchase.</h1>"
+    return '''
+    <html>
+    <head>
+        <title>Payment Successful</title>
+        <style>
+            body {
+                text-align: center;
+                background: linear-gradient(to right, #28a745, #ff69b4); /* Green to Pink */
+                font-family: Arial, sans-serif;
+                color: white;
+                padding: 50px;
+            }
+            h1 {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+            .btn {
+                background-color: #fff;
+                color: #28a745;
+                padding: 12px 20px;
+                border-radius: 5px;
+                font-size: 18px;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            .btn:hover {
+                background-color: #ddd;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>✅ Payment Successful! Thank you for your purchase.</h1>
+        <p>Click below to go back and generate more ideas!</p>
+        <a href="/" class="btn">🔙 Go Back to AI Generator</a>
+    </body>
+    </html>
+    '''
 
 @app.route('/cancel')
 def cancel():
-    return "Payment Cancelled. Please try again."
-
+    return '''
+    <html>
+    <head>
+        <title>Payment Canceled</title>
+        <style>
+            body {
+                text-align: center;
+                background: linear-gradient(to right, #ff0000, #ff69b4);
+                font-family: Arial, sans-serif;
+                color: white;
+                padding: 50px;
+            }
+            h1 {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+            .btn {
+                background-color: #fff;
+                color: #ff0000;
+                padding: 12px 20px;
+                border-radius: 5px;
+                font-size: 18px;
+                text-decoration: none;
+                font-weight: bold;
+            }
+            .btn:hover {
+                background-color: #ddd;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>❌ Payment Canceled</h1>
+        <p>Your payment was canceled. Click below to try again.</p>
+        <a href="/" class="btn">🔙 Go Back</a>
+    </body>
+    </html>
+    '''
 
 # Run Flask app
 if __name__ == '__main__':
