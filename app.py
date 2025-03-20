@@ -3,46 +3,20 @@ import openai
 import stripe
 from flask_cors import CORS
 import os
-import json
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Set a secret key for Flask sessions
+# Set secret key for Flask sessions
 app.secret_key = "supersecretkey"
 
-# Load API keys from environment variables
+# Load API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
-# File to store AI-generated ideas
-IDEAS_FILE = "ideas.json"
-
-def ensure_ideas_file():
-    """Ensure that the ideas.json file exists, creating it if necessary."""
-    if not os.path.exists(IDEAS_FILE):
-        with open(IDEAS_FILE, "w") as f:
-            json.dump([], f) # Create an empty JSON file
-
-def save_ideas(ideas):
-    """Save AI-generated ideas to a file for later retrieval."""
-    ensure_ideas_file()
-    with open(IDEAS_FILE, "w") as f:
-        json.dump(ideas, f)
-
-def load_ideas():
-    """Load AI-generated ideas from the file, ensuring it exists."""
-    ensure_ideas_file()
-    try:
-        with open(IDEAS_FILE, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading ideas: {e}")
-        return []
-
 def generate_ai_ideas(niche, platform):
-    """Generate new AI ideas using OpenAI API."""
+    """Generate AI-generated ideas for a given niche and platform."""
     try:
         if not openai.api_key:
             return ["❌ ERROR: OpenAI API key is missing!"]
@@ -69,16 +43,13 @@ def home():
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
-    """Generate new ideas using OpenAI and save them."""
+    """Generate new ideas using OpenAI and return them instantly."""
     try:
         data = request.json
         niche = data.get("niche", "general")
         platform = data.get("platform", "Instagram")
 
         ideas = generate_ai_ideas(niche, platform)
-
-        # ✅ Save NEWLY generated ideas
-        save_ideas(ideas)
 
         return jsonify({"status": "success", "ideas": ideas})
 
@@ -100,7 +71,7 @@ def create_checkout_session():
                 'quantity': 1,
             }],
             mode='payment',
-            success_url="https://quickfix-xidb.onrender.com/success",
+            success_url="https://quickfix-xidb.onrender.com/success?niche={niche}&platform={platform}",
             cancel_url="https://quickfix-xidb.onrender.com/cancel",
         )
         return jsonify({"url": session.url})
@@ -110,9 +81,11 @@ def create_checkout_session():
 
 @app.route('/success')
 def success():
-    """Retrieve AI-generated ideas after payment."""
-    ideas = load_ideas()
-    print(f"✅ Loaded AI ideas successfully: {ideas}") # Debugging output
+    """Generate fresh AI ideas on the success page after payment."""
+    niche = request.args.get("niche", "general")
+    platform = request.args.get("platform", "Instagram")
+
+    ideas = generate_ai_ideas(niche, platform)
     return render_template("success.html", ideas=ideas)
 
 @app.route('/cancel')
