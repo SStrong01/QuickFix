@@ -16,20 +16,29 @@ app.secret_key = "supersecretkey"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
-# Path for storing AI-generated ideas
+# File to store AI-generated ideas
 IDEAS_FILE = "ideas.json"
+
+def ensure_ideas_file():
+    """Ensure that the ideas.json file exists, creating it if necessary."""
+    if not os.path.exists(IDEAS_FILE):
+        with open(IDEAS_FILE, "w") as f:
+            json.dump([], f) # Create an empty JSON file
 
 def save_ideas(ideas):
     """Save AI-generated ideas to a file for later retrieval."""
+    ensure_ideas_file()
     with open(IDEAS_FILE, "w") as f:
         json.dump(ideas, f)
 
 def load_ideas():
-    """Load AI-generated ideas from the file."""
+    """Load AI-generated ideas from the file, ensuring it exists."""
+    ensure_ideas_file()
     try:
         with open(IDEAS_FILE, "r") as f:
             return json.load(f)
-    except FileNotFoundError:
+    except Exception as e:
+        print(f"Error loading ideas: {e}")
         return []
 
 @app.route('/')
@@ -91,15 +100,8 @@ def create_checkout_session():
 @app.route('/success')
 def success():
     """Retrieve AI-generated ideas after payment."""
-    ideas = []
-    
-    # ✅ Load ideas correctly after payment
-    try:
-        with open(IDEAS_FILE, "r") as f:
-            ideas = json.load(f)
-    except Exception as e:
-        print(f"Error loading ideas: {e}") # Debugging output
-
+    ideas = load_ideas()
+    print(f"✅ Loaded AI ideas successfully: {ideas}") # Debugging output
     return render_template("success.html", ideas=ideas)
 
 @app.route('/cancel')
