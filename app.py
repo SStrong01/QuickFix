@@ -58,7 +58,7 @@ def generate_content():
 
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
 
-        # Save ideas to a file before payment
+        # ✅ Save ideas before payment
         save_ideas(ideas)
 
         return jsonify({"status": "success", "ideas": ideas})
@@ -91,7 +91,14 @@ def create_checkout_session():
 @app.route('/success')
 def success():
     """Retrieve AI-generated ideas after payment."""
-    ideas = load_ideas()
+    ideas = []
+    
+    # ✅ Load ideas correctly after payment
+    try:
+        with open(IDEAS_FILE, "r") as f:
+            ideas = json.load(f)
+    except Exception as e:
+        print(f"Error loading ideas: {e}") # Debugging output
 
     return render_template("success.html", ideas=ideas)
 
