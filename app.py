@@ -24,13 +24,14 @@ def generate_ai_ideas(niche, platform):
         prompt = f"Generate 5 viral content ideas for {platform} in the {niche} niche."
 
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4", # Use "gpt-4" or "gpt-3.5-turbo"
             messages=[
                 {"role": "system", "content": "You are an expert content creator."},
                 {"role": "user", "content": prompt}
             ]
         )
 
+        # Extract responses correctly
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
         return ideas
 
@@ -60,6 +61,9 @@ def generate_content():
 def create_checkout_session():
     """Create a Stripe checkout session."""
     try:
+        niche = request.json.get("niche", "general")
+        platform = request.json.get("platform", "Instagram")
+
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -71,7 +75,7 @@ def create_checkout_session():
                 'quantity': 1,
             }],
             mode='payment',
-            success_url="https://quickfix-xidb.onrender.com/success?niche={niche}&platform={platform}",
+            success_url=f"https://quickfix-xidb.onrender.com/success?niche={niche}&platform={platform}",
             cancel_url="https://quickfix-xidb.onrender.com/cancel",
         )
         return jsonify({"url": session.url})
