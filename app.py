@@ -46,7 +46,13 @@ def home():
 def generate_content():
     """Generate new ideas using OpenAI and return them instantly."""
     try:
-        data = request.json
+        if request.content_type != "application/json":
+            return jsonify({"status": "error", "message": "Invalid Content-Type, expected 'application/json'"}), 415
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "No JSON data received"}), 400
+        
         niche = data.get("niche", "general")
         platform = data.get("platform", "Instagram")
 
@@ -55,14 +61,18 @@ def generate_content():
         return jsonify({"status": "success", "ideas": ideas})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     """Create a Stripe checkout session."""
     try:
-        niche = request.json.get("niche", "general")
-        platform = request.json.get("platform", "Instagram")
+        if request.content_type != "application/json":
+            return jsonify({"status": "error", "message": "Invalid Content-Type, expected 'application/json'"}), 415
+
+        data = request.get_json()
+        niche = data.get("niche", "general")
+        platform = data.get("platform", "Instagram")
 
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],

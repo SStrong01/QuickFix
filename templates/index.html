@@ -1,9 +1,7 @@
-<script>
 document.addEventListener("DOMContentLoaded", function () {
     // Get elements
     const generateBtn = document.getElementById("generateBtn");
     const ideasList = document.getElementById("ideasList");
-    const buyNowBtn = document.getElementById("buyNowBtn");
 
     // Generate AI Ideas
     generateBtn.addEventListener("click", function () {
@@ -23,7 +21,12 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             body: JSON.stringify({ niche: niche, platform: platform }) // ✅ Fix: Send JSON data
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === "success") {
                 ideasList.innerHTML = "";
@@ -41,36 +44,4 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("❌ Error generating AI ideas.");
         });
     });
-
-    // Handle Stripe Payment
-    buyNowBtn.addEventListener("click", function () {
-        let niche = document.getElementById("nicheInput").value.trim();
-        let platform = document.getElementById("platformSelect").value;
-
-        if (niche === "") {
-            alert("Please enter a niche before purchasing.");
-            return;
-        }
-
-        fetch("/create-checkout-session", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ niche: niche, platform: platform })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.url) {
-                window.location.href = data.url; // Redirect to Stripe checkout
-            } else {
-                alert("❌ Error creating checkout session.");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("❌ Error processing payment.");
-        });
-    });
 });
-</script>
