@@ -41,19 +41,11 @@ def load_ideas():
         print(f"Error loading ideas: {e}")
         return []
 
-@app.route('/')
-def home():
-    return render_template("index.html")
-
-@app.route('/generate', methods=['POST'])
-def generate_content():
+def generate_ai_ideas(niche, platform):
+    """Generate new AI ideas using OpenAI API."""
     try:
-        data = request.json
-        niche = data.get("niche", "general")
-        platform = data.get("platform", "Instagram")
-
         if not openai.api_key:
-            return jsonify({"status": "error", "message": "OpenAI API key is missing!"})
+            return ["❌ ERROR: OpenAI API key is missing!"]
 
         prompt = f"Generate 5 viral content ideas for {platform} in the {niche} niche."
 
@@ -66,8 +58,26 @@ def generate_content():
         )
 
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
+        return ideas
 
-        # ✅ Save ideas before payment
+    except Exception as e:
+        return [f"❌ ERROR: {str(e)}"]
+
+@app.route('/')
+def home():
+    return render_template("index.html")
+
+@app.route('/generate', methods=['POST'])
+def generate_content():
+    """Generate new ideas using OpenAI and save them."""
+    try:
+        data = request.json
+        niche = data.get("niche", "general")
+        platform = data.get("platform", "Instagram")
+
+        ideas = generate_ai_ideas(niche, platform)
+
+        # ✅ Save NEWLY generated ideas
         save_ideas(ideas)
 
         return jsonify({"status": "success", "ideas": ideas})
@@ -77,6 +87,7 @@ def generate_content():
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
+    """Create a Stripe checkout session."""
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
