@@ -7,7 +7,7 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app) # Allow frontend requests
+CORS(app)
 
 # Set a secret key for sessions (optional)
 app.secret_key = "supersecretkey"
@@ -34,8 +34,7 @@ def load_ideas():
 
 @app.route('/')
 def home():
-    ideas = load_ideas()
-    return render_template("index.html", ideas=ideas)
+    return render_template("index.html")
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
@@ -94,55 +93,7 @@ def success():
     # Retrieve stored AI-generated ideas
     ideas = load_ideas()
 
-    return f"""
-    <html>
-    <head>
-        <title>Payment Successful</title>
-        <style>
-            body {{
-                text-align: center;
-                background: linear-gradient(to right, #28a745, #ff69b4);
-                font-family: Arial, sans-serif;
-                color: white;
-                padding: 50px;
-            }}
-            h1 {{
-                font-size: 28px;
-                margin-bottom: 20px;
-            }}
-            .btn {{
-                background-color: #fff;
-                color: #28a745;
-                padding: 12px 20px;
-                border-radius: 5px;
-                font-size: 18px;
-                text-decoration: none;
-                font-weight: bold;
-            }}
-            .btn:hover {{
-                background-color: #ddd;
-            }}
-            .ideas-box {{
-                background: rgba(255, 255, 255, 0.2);
-                padding: 20px;
-                border-radius: 10px;
-                margin-top: 20px;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>✅ Payment Successful! Thank you for your purchase.</h1>
-        <p>Here are your AI-generated ideas:</p>
-        <div class="ideas-box">
-            <ul>
-                {''.join(f'<li>{idea}</li>' for idea in ideas)}
-            </ul>
-        </div>
-        <p>Click below to generate more ideas!</p>
-        <a href="/" class="btn">🔙 Go Back to AI Generator</a>
-    </body>
-    </html>
-    """
+    return render_template("success.html", ideas=ideas)
 
 @app.route('/cancel')
 def cancel():

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful</title>
+    <style>
+        body {
+            text-align: center;
+            background: linear-gradient(to right, #28a745, #ff69b4);
+            font-family: Arial, sans-serif;
+            color: white;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #fff;
+            color: #28a745;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #ddd;
+        }
+        .ideas-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+            max-width: 600px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Payment Successful! Thank you for your purchase.</h1>
+    <p>Here are your AI-generated ideas:</p>
+    <div class="ideas-box">
+        <ul>
+            {% for idea in ideas %}
+                <li>{{ idea }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <p>Click below to generate more ideas!</p>
+    <a href="/" class="btn">🔙 Go Back to AI Generator</a>
+</body>
+</html>
