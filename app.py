@@ -1,42 +1,14 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 import openai
 import stripe
-from flask_cors import CORS
 import os
 
-# Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "your_secret_key")
 
-# Set secret key for Flask sessions
-app.secret_key = "supersecretkey"
-
-# Load API keys
+# Load API keys from environment variables
 openai.api_key = os.getenv("OPENAI_API_KEY")
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
-
-def generate_ai_ideas(niche, platform):
-    """Generate AI-generated ideas for a given niche and platform."""
-    try:
-        if not openai.api_key:
-            return ["❌ ERROR: OpenAI API key is missing!"]
-
-        prompt = f"Generate 5 viral content ideas for {platform} in the {niche} niche."
-
-        response = openai.ChatCompletion.create(
-            model="gpt-4", # Use "gpt-4" or "gpt-3.5-turbo"
-            messages=[
-                {"role": "system", "content": "You are an expert content creator."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-
-        # Extract responses correctly
-        ideas = response["choices"][0]["message"]["content"].strip().split("\n")
-        return ideas
-
-    except Exception as e:
-        return [f"❌ ERROR: {str(e)}"]
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 @app.route('/')
 def home():
@@ -44,19 +16,30 @@ def home():
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
-    """Generate new ideas using OpenAI and return them instantly."""
+    """Generate AI content dynamically based on user input."""
     try:
+        # Ensure Content-Type is JSON
         if request.content_type != "application/json":
-            return jsonify({"status": "error", "message": "Invalid Content-Type, expected 'application/json'"}), 415
-        
+            return jsonify({"status": "error", "message": "Content-Type must be 'application/json'"}), 415
+
+        # Parse JSON request data
         data = request.get_json()
         if not data:
-            return jsonify({"status": "error", "message": "No JSON data received"}), 400
-        
+            return jsonify({"status": "error", "message": "Invalid JSON data"}), 400
+
         niche = data.get("niche", "general")
         platform = data.get("platform", "Instagram")
 
-        ideas = generate_ai_ideas(niche, platform)
+        # Generate AI content using OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": f"Give me 5 viral {platform} ideas for {niche}"}]
+        )
+
+        ideas = response["choices"][0]["message"]["content"].strip().split("\n")
+
+        # Save generated ideas in session to retrieve after payment
+        session["ai_ideas"] = ideas  
 
         return jsonify({"status": "success", "ideas": ideas})
 
@@ -65,46 +48,41 @@ def generate_content():
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    """Create a Stripe checkout session."""
+    """Create a Stripe checkout session for payment."""
     try:
-        if request.content_type != "application/json":
-            return jsonify({"status": "error", "message": "Invalid Content-Type, expected 'application/json'"}), 415
-
+        # Parse request JSON
         data = request.get_json()
-        niche = data.get("niche", "general")
-        platform = data.get("platform", "Instagram")
+        if not data:
+            return jsonify({"status": "error", "message": "Invalid request"}), 400
 
-        session = stripe.checkout.Session.create(
+        # Set Stripe session
+        checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
                     'currency': 'usd',
-                    'product_data': {'name': 'AI Content Ideas'},
-                    'unit_amount': 500, # $5.00
+                    'product_data': {
+                        'name': 'Premium AI Content Ideas'
+                    },
+                    'unit_amount': 5000, # $50.00 in cents
                 },
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=f"https://quickfix-xidb.onrender.com/success?niche={niche}&platform={platform}",
-            cancel_url="https://quickfix-xidb.onrender.com/cancel",
+            success_url=url_for('success', _external=True),
+            cancel_url=url_for('home', _external=True),
         )
-        return jsonify({"url": session.url})
+
+        return jsonify({"url": checkout_session.url})
 
     except Exception as e:
-        return jsonify(error=str(e)), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/success')
 def success():
-    """Generate fresh AI ideas on the success page after payment."""
-    niche = request.args.get("niche", "general")
-    platform = request.args.get("platform", "Instagram")
-
-    ideas = generate_ai_ideas(niche, platform)
+    """Display success page with AI-generated content."""
+    ideas = session.get("ai_ideas", []) # Retrieve stored ideas
     return render_template("success.html", ideas=ideas)
-
-@app.route('/cancel')
-def cancel():
-    return render_template("cancel.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
