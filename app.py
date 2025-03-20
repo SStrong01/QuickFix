@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 import openai
 import stripe
 from flask_cors import CORS
@@ -8,15 +8,18 @@ import os
 app = Flask(__name__)
 CORS(app) # Allow frontend requests
 
+# Set a secret key for sessions
+app.secret_key = "supersecretkey"
+
 # Load API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
-# Routes
 @app.route('/')
 def home():
-    return render_template("index.html") # Serve frontend
-
+    # Retrieve stored AI-generated ideas if they exist
+    ideas = session.get("ideas", None)
+    return render_template("index.html", ideas=ideas)
 
 @app.route('/generate', methods=['POST'])
 def generate_content():
@@ -40,13 +43,15 @@ def generate_content():
 
         ideas = response["choices"][0]["message"]["content"].strip().split("\n")
 
+        # Store ideas in session before payment
+        session["ideas"] = ideas
+
         return jsonify({"status": "success", "ideas": ideas})
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
 
-# Route for creating a Stripe Checkout session
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -70,26 +75,28 @@ def create_checkout_session():
         return jsonify(error=str(e)), 500
 
 
-# Success Page with "Go Back" Button
 @app.route('/success')
 def success():
-    return '''
+    # Retrieve the stored AI-generated ideas
+    ideas = session.get("ideas", ["No ideas found. Please generate new ones."])
+    
+    return f"""
     <html>
     <head>
         <title>Payment Successful</title>
         <style>
-            body {
+            body {{
                 text-align: center;
-                background: linear-gradient(to right, #28a745, #ff69b4); /* Green to Pink */
+                background: linear-gradient(to right, #28a745, #ff69b4);
                 font-family: Arial, sans-serif;
                 color: white;
                 padding: 50px;
-            }
-            h1 {
+            }}
+            h1 {{
                 font-size: 28px;
                 margin-bottom: 20px;
-            }
-            .btn {
+            }}
+            .btn {{
                 background-color: #fff;
                 color: #28a745;
                 padding: 12px 20px;
@@ -97,19 +104,31 @@ def success():
                 font-size: 18px;
                 text-decoration: none;
                 font-weight: bold;
-            }
-            .btn:hover {
+            }}
+            .btn:hover {{
                 background-color: #ddd;
-            }
+            }}
+            .ideas-box {{
+                background: rgba(255, 255, 255, 0.2);
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 20px;
+            }}
         </style>
     </head>
     <body>
         <h1>✅ Payment Successful! Thank you for your purchase.</h1>
-        <p>Click below to go back and generate more ideas!</p>
+        <p>Here are your AI-generated ideas:</p>
+        <div class="ideas-box">
+            <ul>
+                {''.join(f'<li>{idea}</li>' for idea in ideas)}
+            </ul>
+        </div>
+        <p>Click below to generate more ideas!</p>
         <a href="/" class="btn">🔙 Go Back to AI Generator</a>
     </body>
     </html>
-    '''
+    """
 
 @app.route('/cancel')
 def cancel():
