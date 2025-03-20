@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template
 import openai
 import stripe
 from flask_cors import CORS
@@ -9,10 +9,10 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Set a secret key for sessions (optional)
+# Set a secret key for Flask sessions
 app.secret_key = "supersecretkey"
 
-# Load API keys
+# Load API keys from environment variables
 openai.api_key = os.getenv("OPENAI_API_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY") # Your Stripe Secret Key
 
@@ -90,50 +90,14 @@ def create_checkout_session():
 
 @app.route('/success')
 def success():
-    # Retrieve stored AI-generated ideas
+    """Retrieve AI-generated ideas after payment."""
     ideas = load_ideas()
 
     return render_template("success.html", ideas=ideas)
 
 @app.route('/cancel')
 def cancel():
-    return '''
-    <html>
-    <head>
-        <title>Payment Canceled</title>
-        <style>
-            body {
-                text-align: center;
-                background: linear-gradient(to right, #ff0000, #ff69b4);
-                font-family: Arial, sans-serif;
-                color: white;
-                padding: 50px;
-            }
-            h1 {
-                font-size: 28px;
-                margin-bottom: 20px;
-            }
-            .btn {
-                background-color: #fff;
-                color: #ff0000;
-                padding: 12px 20px;
-                border-radius: 5px;
-                font-size: 18px;
-                text-decoration: none;
-                font-weight: bold;
-            }
-            .btn:hover {
-                background-color: #ddd;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>❌ Payment Canceled</h1>
-        <p>Your payment was canceled. Click below to try again.</p>
-        <a href="/" class="btn">🔙 Go Back</a>
-    </body>
-    </html>
-    '''
+    return render_template("cancel.html")
 
 if __name__ == '__main__':
     app.run(debug=True)

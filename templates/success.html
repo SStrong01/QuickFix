@@ -44,9 +44,13 @@
     <p>Here are your AI-generated ideas:</p>
     <div class="ideas-box">
         <ul>
-            {% for idea in ideas %}
-                <li>{{ idea }}</li>
-            {% endfor %}
+            {% if ideas %}
+                {% for idea in ideas %}
+                    <li>{{ idea }}</li>
+                {% endfor %}
+            {% else %}
+                <p>No ideas found. Please generate new ones.</p>
+            {% endif %}
         </ul>
     </div>
     <p>Click below to generate more ideas!</p>
