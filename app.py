@@ -1,96 +1,69 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
-import openai
-import json
-import os
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import stripe
+import openai
+import os
 
 app = Flask(__name__)
+app.secret_key = "your_secret_key"
 
-# OpenAI API Key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Set API keys
+openai.api_key = os.getenv("OPENAI_API_KEY", "your-openai-key-here")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "your-stripe-secret-key-here")
 
-# Stripe API Keys
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-YOUR_DOMAIN = "https://quickfix-xidb.onrender.com"
-
-# Function to generate AI ideas
-def generate_ai_ideas(niche, platform):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": f"Give me viral content ideas for {niche} on {platform}"}]
-        )
-        return response["choices"][0]["message"]["content"].split("\n")
-    except Exception as e:
-        return [f"Error generating ideas: {str(e)}"]
-
-# Save AI-generated ideas to JSON
-def save_ideas(ideas):
-    with open("ideas.json", "w") as f:
-        json.dump({"ideas": ideas}, f)
-
-# Load AI-generated ideas
-def load_ideas():
-    try:
-        with open("ideas.json", "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"ideas": []}
-
-# Home Page (AI Generator)
+# Route for Home Page
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# Generate AI Ideas (POST Request)
+# Route to Generate AI Ideas
 @app.route("/generate", methods=["POST"])
-def generate():
+def generate_ideas():
     data = request.json
-    niche = data.get("niche")
-    platform = data.get("platform")
+    niche = data.get("niche", "")
+    platform = data.get("platform", "")
 
     if not niche or not platform:
-        return jsonify({"error": "Missing input"}), 400
+        return jsonify({"error": "Niche and Platform are required!"}), 400
 
-    ideas = generate_ai_ideas(niche, platform)
-    save_ideas(ideas) # Save to JSON
-
-    return jsonify({"ideas": ideas})
-
-# Payment Page (Stripe Checkout)
-@app.route("/create-checkout-session", methods=["POST"])
-def create_checkout_session():
     try:
-        checkout_session = stripe.checkout.Session.create(
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": f"Generate viral content ideas for {platform} in the {niche} niche."}]
+        )
+        ideas = response["choices"][0]["message"]["content"].split("\n")
+
+        session["ideas"] = ideas # Store ideas in session
+        return jsonify({"ideas": ideas})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route for Checkout
+@app.route("/checkout", methods=["POST"])
+def checkout():
+    try:
+        session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
                 "price_data": {
                     "currency": "usd",
-                    "product_data": {
-                        "name": "Premium AI Content Ideas"
-                    },
-                    "unit_amount": 5000, # $50 in cents
+                    "product_data": {"name": "AI Generated Ideas"},
+                    "unit_amount": 1000, # $10
                 },
                 "quantity": 1,
             }],
             mode="payment",
-            success_url=YOUR_DOMAIN + "/success",
-            cancel_url=YOUR_DOMAIN + "/",
+            success_url=url_for("success", _external=True),
+            cancel_url=url_for("index", _external=True),
         )
-        return jsonify({"url": checkout_session.url})
+        return jsonify({"url": session.url})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Success Page (After Payment)
+# Route for Success Page
 @app.route("/success")
 def success():
-    return render_template("success.html")
+    ideas = session.get("ideas", [])
+    return render_template("success.html", ideas=ideas)
 
-# Fetch AI Ideas after Payment
-@app.route("/get_ideas")
-def get_ideas():
-    return jsonify(load_ideas())
-
-# Run Flask App
 if __name__ == "__main__":
     app.run(debug=True)

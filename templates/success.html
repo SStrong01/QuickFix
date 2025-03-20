@@ -5,55 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Successful</title>
     <style>
-        body {
-            text-align: center;
-            background: linear-gradient(to right, #28a745, #ff69b4);
-            font-family: Arial, sans-serif;
-            color: white;
-            padding: 50px;
-        }
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background-color: #fff;
-            color: #28a745;
-            padding: 12px 20px;
-            border-radius: 5px;
-            font-size: 18px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .btn:hover {
-            background-color: #ddd;
-        }
-        .ideas-box {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: left;
-            max-width: 600px;
-            margin: auto;
-        }
+        body { background: linear-gradient(to right, #4CAF50, #E91E63); color: white; text-align: center; font-family: Arial, sans-serif; }
+        button { background: #008CBA; padding: 10px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: white; color: black; margin: 5px; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
     <h1>✅ Payment Successful! Thank you for your purchase.</h1>
-    <p>Here are your AI-generated ideas:</p>
-    <div class="ideas-box">
-        <ul>
-            {% if ideas %}
-                {% for idea in ideas %}
-                    <li>{{ idea }}</li>
-                {% endfor %}
-            {% else %}
-                <p>No ideas found. Please generate new ones.</p>
-            {% endif %}
-        </ul>
-    </div>
-    <p>Click below to generate more ideas!</p>
-    <a href="/" class="btn">🔙 Go Back to AI Generator</a>
+    <h2>Here are your AI-generated ideas:</h2>
+    <ul>
+        {% for idea in ideas %}
+            <li>{{ idea }}</li>
+        {% else %}
+            <li>No ideas found! Please generate new ones.</li>
+        {% endfor %}
+    </ul>
+    <br>
+    <button onclick="window.location.href='/'">🔄 Go Back to AI Generator</button>
 </body>
 </html>
