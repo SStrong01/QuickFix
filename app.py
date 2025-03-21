@@ -1,71 +1,91 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import openai
-import stripe
-import os
-import json
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Script loaded successfully!");
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+    // Select buttons
+    const buyNowButton = document.getElementById("buyNow");
+    const generateIdeasButton = document.getElementById("generateIdeas");
 
-# Set OpenAI API key
-openai.api_key = os.getenv('OPENAI_API_KEY')
+    if (!buyNowButton) {
+        console.error("❌ Buy Now button not found!");
+    } else {
+        console.log("✅ Buy Now button found!");
+    }
 
-# Set Stripe API keys
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+    if (!generateIdeasButton) {
+        console.error("❌ Generate Ideas button not found!");
+    } else {
+        console.log("✅ Generate Ideas button found!");
+    }
 
-# Store generated ideas in memory
-generated_ideas = {}
+    // Handle Buy Now Button Click
+    if (buyNowButton) {
+        buyNowButton.addEventListener("click", function () {
+            console.log("Buy Now button clicked!");
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/generate', methods=['POST'])
-def generate_ideas():
-    data = request.get_json()
-    niche = data.get('niche')
-    platform = data.get('platform')
-
-    if not niche or not platform:
-        return jsonify({'error': 'Missing required fields'}), 400
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "system", "content": f"Generate viral content ideas for {platform} in the {niche} niche."}]
-        )
-        ideas = response['choices'][0]['message']['content'].split("\n")
-
-        session['ideas'] = ideas # Store ideas in session for retrieval after payment
-        return jsonify({'ideas': ideas})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/checkout', methods=['POST'])
-def checkout():
-    try:
-        session_data = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {'name': 'AI-Generated Content Ideas'},
-                    'unit_amount': 1000, # $10 in cents
+            fetch("/create-checkout-session", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=url_for('success', _external=True),
-            cancel_url=url_for('index', _external=True)
-        )
-        return jsonify({'checkout_url': session_data.url})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    window.location.href = data.url; // Redirect to Stripe checkout
+                } else {
+                    console.error("❌ Stripe URL not received!");
+                    alert("Payment failed. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error("❌ Error processing payment:", error);
+                alert("An error occurred. Please try again.");
+            });
+        });
+    }
 
-@app.route('/success')
-def success():
-    ideas = session.get('ideas', [])
-    return render_template('success.html', ideas=ideas)
+    // Handle Generate Ideas Button Click
+    if (generateIdeasButton) {
+        generateIdeasButton.addEventListener("click", function () {
+            console.log("Generate Ideas button clicked!");
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            const niche = document.getElementById("niche").value;
+            const platform = document.getElementById("platform").value;
+
+            if (!niche || !platform) {
+                alert("Please enter a niche and select a platform.");
+                return;
+            }
+
+            fetch("/generate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ niche, platform }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ideas) {
+                    console.log("✅ AI Ideas generated:", data.ideas);
+
+                    const ideasList = document.getElementById("ideasList");
+                    ideasList.innerHTML = ""; // Clear previous ideas
+
+                    data.ideas.forEach((idea, index) => {
+                        const listItem = document.createElement("li");
+                        listItem.textContent = `🔥 ${idea}`;
+                        ideasList.appendChild(listItem);
+                    });
+                } else {
+                    console.error("❌ No ideas received from the server.");
+                    alert("Failed to generate ideas. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error("❌ Error fetching AI ideas:", error);
+                alert("An error occurred. Please try again.");
+            });
+        });
+    }
+});
