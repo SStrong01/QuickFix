@@ -1,74 +1,46 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import openai
-import stripe
-import os
-import json
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Idea Generator</title>
+    <style>
+        body { 
+            background: linear-gradient(to right, #4CAF50, #E91E63); 
+            color: white; 
+            text-align: center;
+            font-family: Arial, sans-serif; 
+        }
+        button { 
+            margin: 10px; 
+            padding: 10px; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border: none; 
+        }
+    </style>
+</head>
+<body>
 
-app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+    <h1>AI Content Idea Generator</h1>
+    <input type="text" id="niche" placeholder="Enter Niche (e.g., Fitness)">
+    
+    <select id="platform">
+        <option value="Instagram">Instagram</option>
+        <option value="TikTok">TikTok</option>
+        <option value="YouTube">YouTube</option>
+    </select>
 
-# Set OpenAI API Key
-openai.api_key = os.getenv('OPENAI_API_KEY')
+    <button id="generate-button">🚀 Generate Ideas</button>
 
-# Set Stripe API Key
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+    <h3>AI-Generated Ideas:</h3>
+    <ul id="ideas-container"></ul>
 
-# Store generated ideas in session
-generated_ideas = {}
+    <h2>💰 Unlock Premium Features</h2>
+    <p>Get exclusive AI-generated content ideas for only **$10**</p>
+    <button id="buy-now">💳 Buy Now ($10 for Premium Ideas)</button>
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/generate', methods=['POST'])
-def generate_ideas():
-    data = request.get_json()
-    niche = data.get('niche')
-    platform = data.get('platform')
-
-    if not niche or not platform:
-        return jsonify({"error": "Missing required fields"}), 400
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "system", "content": f"Generate viral content ideas for {platform} in the {niche} niche."}]
-        )
-        ideas = response["choices"][0]["message"]["content"].split("\n")
-
-        # Store ideas in session for retrieval after payment
-        session['ideas'] = ideas
-        return jsonify({"ideas": ideas})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/checkout', methods=['POST'])
-def checkout():
-    try:
-        session_data = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {'name': 'AI-Generated Content Ideas'},
-                    'unit_amount': 1000, # $10 in cents
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=url_for('success', _external=True),
-            cancel_url=url_for('index', _external=True)
-        )
-        return jsonify({'url': session_data.url})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/success')
-def success():
-    ideas = session.get('ideas', [])
-    return render_template('success.html', ideas=ideas)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
