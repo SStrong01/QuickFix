@@ -11,9 +11,6 @@ app.secret_key = 'your_secret_key_here'
 openai.api_key = os.getenv('OPENAI_API_KEY')
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
-# Store generated ideas in session
-generated_ideas = {}
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -34,7 +31,8 @@ def generate_ideas():
         )
         ideas = response['choices'][0]['message']['content'].split("\n")
 
-        session['generated_ideas'] = ideas # Store in session for access after payment
+        session['generated_ideas'] = ideas # Store ideas in session
+        session.modified = True # Ensure session is updated
         return jsonify({"ideas": ideas})
 
     except Exception as e:
@@ -64,7 +62,7 @@ def checkout():
 
 @app.route('/success')
 def success():
-    ideas = session.get('generated_ideas', [])
+    ideas = session.get('generated_ideas', []) # Retrieve stored ideas
     return render_template('success.html', ideas=ideas)
 
 if __name__ == '__main__':

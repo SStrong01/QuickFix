@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(data => {
             ideasContainer.innerHTML = ""; // Clear previous ideas
             if (data.ideas) {
+                sessionStorage.setItem("ideas", JSON.stringify(data.ideas)); // Store in sessionStorage
                 data.ideas.forEach(idea => {
                     const li = document.createElement("li");
                     li.textContent = idea;
