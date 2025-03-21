@@ -1,84 +1,62 @@
 document.addEventListener("DOMContentLoaded", function () {
-    console.log("JavaScript loaded successfully!");
+    console.log("JavaScript Loaded Successfully");
 
-    // Select elements
-    const buyButton = document.getElementById("buyNowButton");
-    const generateButton = document.getElementById("generateIdeas");
-    const ideasContainer = document.getElementById("ideasContainer");
-    const nicheInput = document.getElementById("niche");
-    const platformSelect = document.getElementById("platform");
+    // Handle "Buy Now" button click
+    let buyButton = document.getElementById("buy-button"); // Ensure the button has this ID
 
-    // ✅ Ensure the "Buy Now" button works
     if (buyButton) {
         buyButton.addEventListener("click", function () {
-            console.log("Buy Now button clicked!");
-            fetch("/create-checkout-session", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.url) {
-                    window.location.href = data.url; // Redirect to Stripe Checkout
-                } else {
-                    alert("Payment processing failed.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Error processing payment. Check console for details.");
-            });
+            console.log("Buy Button Clicked!");
+            alert("Redirecting to payment...");
+            window.location.href = "/checkout"; // Update with your actual payment URL
         });
     } else {
-        console.error("Buy Now button not found!");
+        console.error("Buy button not found!");
     }
 
-    // ✅ Ensure the "Generate Ideas" button works
+    // Handle AI idea generation
+    let generateButton = document.getElementById("generate-ideas");
+
     if (generateButton) {
         generateButton.addEventListener("click", function () {
-            const niche = nicheInput.value.trim();
-            const platform = platformSelect.value.trim();
+            console.log("Generating AI Ideas...");
+            let niche = document.getElementById("niche").value;
+            let platform = document.getElementById("platform").value;
 
             if (!niche || !platform) {
                 alert("Please enter a niche and select a platform.");
                 return;
             }
 
-            console.log(`Requesting AI-generated ideas for: ${niche} on ${platform}`);
-
             fetch("/generate", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
+                    "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ niche: niche, platform: platform }),
+                body: JSON.stringify({ niche: niche, platform: platform })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.error) {
-                    alert(`Error: ${data.error}`);
-                    return;
-                }
+                console.log("Generated Ideas:", data);
+                let ideaList = document.getElementById("idea-list");
+                ideaList.innerHTML = ""; // Clear previous ideas
 
-                ideasContainer.innerHTML = ""; // Clear old ideas
-                if (data.ideas.length === 0) {
-                    ideasContainer.innerHTML = "<p>No ideas found. Try another niche.</p>";
-                } else {
-                    data.ideas.forEach((idea, index) => {
-                        const ideaElement = document.createElement("p");
-                        ideaElement.innerHTML = `🔥 <strong>${index + 1}. ${idea}</strong>`;
-                        ideasContainer.appendChild(ideaElement);
+                if (data.ideas && data.ideas.length > 0) {
+                    data.ideas.forEach(idea => {
+                        let li = document.createElement("li");
+                        li.textContent = idea;
+                        ideaList.appendChild(li);
                     });
+                } else {
+                    ideaList.innerHTML = "<li>No ideas found. Please try again.</li>";
                 }
             })
             .catch(error => {
-                console.error("Error:", error);
-                alert("Error fetching AI ideas. Check console for details.");
+                console.error("Error fetching AI ideas:", error);
+                alert("Error generating ideas. Please try again.");
             });
         });
     } else {
-        console.error("Generate Ideas button not found!");
+        console.error("Generate button not found!");
     }
 });
