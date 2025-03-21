@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const nicheInput = document.getElementById("niche");
     const platformSelect = document.getElementById("platform");
 
-    // ✅ Buy Now Button Click Event
+    // ✅ Ensure the "Buy Now" button works
     if (buyButton) {
         buyButton.addEventListener("click", function () {
             console.log("Buy Now button clicked!");
@@ -23,16 +23,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.url) {
                     window.location.href = data.url; // Redirect to Stripe Checkout
                 } else {
-                    alert("Error: Could not process payment.");
+                    alert("Payment processing failed.");
                 }
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error processing payment. Check console for details.");
+            });
         });
     } else {
         console.error("Buy Now button not found!");
     }
 
-    // ✅ Generate Ideas Button Click Event
+    // ✅ Ensure the "Generate Ideas" button works
     if (generateButton) {
         generateButton.addEventListener("click", function () {
             const niche = nicheInput.value.trim();
@@ -43,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            console.log("Generating ideas for:", niche, platform);
+            console.log(`Requesting AI-generated ideas for: ${niche} on ${platform}`);
 
             fetch("/generate", {
                 method: "POST",
@@ -59,14 +62,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                ideasContainer.innerHTML = ""; // Clear previous ideas
-                data.ideas.forEach((idea, index) => {
-                    const ideaElement = document.createElement("p");
-                    ideaElement.innerHTML = `🔥 <strong>${index + 1}. ${idea}</strong>`;
-                    ideasContainer.appendChild(ideaElement);
-                });
+                ideasContainer.innerHTML = ""; // Clear old ideas
+                if (data.ideas.length === 0) {
+                    ideasContainer.innerHTML = "<p>No ideas found. Try another niche.</p>";
+                } else {
+                    data.ideas.forEach((idea, index) => {
+                        const ideaElement = document.createElement("p");
+                        ideaElement.innerHTML = `🔥 <strong>${index + 1}. ${idea}</strong>`;
+                        ideasContainer.appendChild(ideaElement);
+                    });
+                }
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error fetching AI ideas. Check console for details.");
+            });
         });
     } else {
         console.error("Generate Ideas button not found!");
