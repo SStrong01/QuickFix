@@ -1,69 +1,74 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const generateButton = document.getElementById("generate-btn");
-    const buyNowButton = document.getElementById("buy-now-btn");
-    const ideasContainer = document.getElementById("ideas-container");
+    console.log("JavaScript loaded successfully!");
 
-    generateButton.addEventListener("click", async function () {
-        const niche = document.getElementById("niche").value;
-        const platform = document.getElementById("platform").value;
+    // Select elements
+    const buyButton = document.getElementById("buyNowButton");
+    const generateButton = document.getElementById("generateIdeas");
+    const ideasContainer = document.getElementById("ideasContainer");
+    const nicheInput = document.getElementById("niche");
+    const platformSelect = document.getElementById("platform");
 
-        if (!niche || !platform) {
-            alert("Please enter a niche and select a platform.");
-            return;
-        }
-
-        try {
-            const response = await fetch("/generate", {
+    // ✅ Buy Now Button Click Event
+    if (buyButton) {
+        buyButton.addEventListener("click", function () {
+            console.log("Buy Now button clicked!");
+            fetch("/create-checkout-session", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ niche, platform }),
-            });
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    window.location.href = data.url; // Redirect to Stripe Checkout
+                } else {
+                    alert("Error: Could not process payment.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    } else {
+        console.error("Buy Now button not found!");
+    }
 
-            const data = await response.json();
+    // ✅ Generate Ideas Button Click Event
+    if (generateButton) {
+        generateButton.addEventListener("click", function () {
+            const niche = nicheInput.value.trim();
+            const platform = platformSelect.value.trim();
 
-            if (data.error) {
-                alert("Error: " + data.error);
+            if (!niche || !platform) {
+                alert("Please enter a niche and select a platform.");
                 return;
             }
 
-            sessionStorage.setItem("ideas", JSON.stringify(data.ideas));
+            console.log("Generating ideas for:", niche, platform);
 
-            ideasContainer.innerHTML = "<h3>Your AI-Generated Ideas:</h3><ul>" +
-                data.ideas.map(idea => `<li>${idea}</li>`).join("") + "</ul>";
-
-        } catch (error) {
-            alert("An error occurred while generating ideas.");
-        }
-    });
-
-    buyNowButton.addEventListener("click", async function () {
-        try {
-            const response = await fetch("/checkout", {
+            fetch("/generate", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-            });
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ niche: niche, platform: platform }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                    return;
+                }
 
-            const data = await response.json();
-
-            if (data.error) {
-                alert("Payment error: " + data.error);
-                return;
-            }
-
-            window.location.href = data.checkout_url;
-
-        } catch (error) {
-            alert("An error occurred during checkout.");
-        }
-    });
-
-    if (window.location.pathname === "/success") {
-        const storedIdeas = sessionStorage.getItem("ideas");
-        if (storedIdeas) {
-            ideasContainer.innerHTML = "<h3>Your AI-Generated Ideas:</h3><ul>" +
-                JSON.parse(storedIdeas).map(idea => `<li>${idea}</li>`).join("") + "</ul>";
-        } else {
-            ideasContainer.innerHTML = "<p>No ideas found. Please generate new ones.</p>";
-        }
+                ideasContainer.innerHTML = ""; // Clear previous ideas
+                data.ideas.forEach((idea, index) => {
+                    const ideaElement = document.createElement("p");
+                    ideaElement.innerHTML = `🔥 <strong>${index + 1}. ${idea}</strong>`;
+                    ideasContainer.appendChild(ideaElement);
+                });
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    } else {
+        console.error("Generate Ideas button not found!");
     }
 });
