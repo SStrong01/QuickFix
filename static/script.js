@@ -1,58 +1,60 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const generateButton = document.getElementById("generate-button");
-  const buyNowButton = document.getElementById("buy-now");
-  const ideasContainer = document.getElementById("ideas-container");
+    const generateBtn = document.getElementById("generate-button");
+    const buyNowBtn = document.getElementById("buy-now");
 
-  generateButton.addEventListener("click", async function () {
-    const niche = document.getElementById("niche").value.trim();
-    const platform = document.getElementById("platform").value;
+    let ideasGenerated = false;
 
-    if (!niche) {
-      alert("Please enter a niche.");
-      return;
-    }
+    generateBtn.addEventListener("click", function () {
+        const niche = document.getElementById("niche").value;
+        const platform = document.getElementById("platform").value;
 
-    try {
-      const response = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ niche, platform })
-      });
+        if (!niche || !platform) {
+            alert("Please enter a niche and platform.");
+            return;
+        }
 
-      const data = await response.json();
-      ideasContainer.innerHTML = "";
-
-      if (data.ideas && data.ideas.length > 0) {
-        data.ideas.forEach(idea => {
-          const li = document.createElement("li");
-          li.textContent = idea;
-          ideasContainer.appendChild(li);
+        fetch("/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ niche, platform })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Ideas generated! Now click 'Buy Now' to unlock them.");
+                ideasGenerated = true;
+            } else {
+                alert("Error generating ideas: " + data.error);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Something went wrong.");
         });
-      } else {
-        ideasContainer.innerHTML = "<li>No ideas found. Try again.</li>";
-      }
-    } catch (error) {
-      console.error("Error generating ideas:", error);
-      ideasContainer.innerHTML = "<li>Something went wrong. Try again later.</li>";
-    }
-  });
+    });
 
-  buyNowButton.addEventListener("click", async function () {
-    try {
-      const response = await fetch("/checkout", {
-        method: "POST"
-      });
+    buyNowBtn.addEventListener("click", function () {
+        if (!ideasGenerated) {
+            alert("Please generate ideas before purchasing.");
+            return;
+        }
 
-      const data = await response.json();
-
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        alert("Payment failed: " + (data.error || "Unknown error"));
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert("Something went wrong during payment.");
-    }
-  });
+        fetch("/checkout", {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                alert("Checkout failed: " + data.error);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Something went wrong during checkout.");
+        });
+    });
 });

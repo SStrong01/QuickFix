@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# Set OpenAI and Stripe API keys from environment variables
+# Set your API keys
 openai.api_key = os.getenv('OPENAI_API_KEY')
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
@@ -24,22 +24,21 @@ def generate_ideas():
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
-        # Generate ideas using OpenAI
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0125",
             messages=[
-                {"role": "system", "content": "Generate viral content ideas for social media."},
-                {"role": "user", "content": f"Generate 5 viral content ideas for {platform} in the {niche} niche."}
+                {"role": "system", "content": "You generate viral content ideas for social media niches."},
+                {"role": "user", "content": f"Give me 5 viral content ideas for {platform} in the {niche} niche."}
             ]
         )
         ideas_text = response['choices'][0]['message']['content']
-        ideas = ideas_text.strip().split("\n")
+        ideas = [idea.strip("•- ") for idea in ideas_text.strip().split("\n") if idea.strip()]
 
-        # Store in session to show after payment
+        # Save to session
         session['generated_ideas'] = ideas
         session.modified = True
 
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -52,11 +51,11 @@ def checkout():
                 'price_data': {
                     'currency': 'usd',
                     'product_data': {
-                        'name': 'AI-Generated Content Ideas',
+                        'name': 'AI Content Ideas'
                     },
-                    'unit_amount': 1000, # $10.00
+                    'unit_amount': 1000,
                 },
-                'quantity': 1,
+                'quantity': 1
             }],
             mode='payment',
             success_url=url_for('success', _external=True),
@@ -64,7 +63,7 @@ def checkout():
         )
         return jsonify({'checkout_url': session_data.url})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
 def success():
