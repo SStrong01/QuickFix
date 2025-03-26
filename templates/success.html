@@ -1,42 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful</title>
-    <style>
-        body { 
-            background: linear-gradient(to right, #4CAF50, #E91E63); 
-            color: white; 
-            text-align: center;
-            font-family: Arial, sans-serif; 
-        }
-        button { 
-            margin: 10px; 
-            padding: 10px; 
-            border-radius: 5px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: none; 
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #4CAF50, #E91E63);
+      color: white;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      margin: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>✅ Payment Successful! Thank you for your purchase.</h1>
-    <h3>Here are your AI-generated ideas:</h3>
-    
-    <ul id="ideas-container">
-        {% if ideas %}
-            {% for idea in ideas %}
-                <li>{{ idea }}</li>
-            {% endfor %}
-        {% else %}
-            <li>No ideas found! Please generate new ones.</li>
-        {% endif %}
-    </ul>
+  <h1>✅ Payment Successful! Thank you for your purchase.</h1>
+  <h3>Here are your AI-generated ideas:</h3>
 
-    <button onclick="window.location.href='/'">🔄 Go Back to AI Generator</button>
+  <ul id="ideas-container">
+    {% if ideas %}
+      {% for idea in ideas %}
+        <li>{{ idea }}</li>
+      {% endfor %}
+    {% else %}
+      <li>No ideas found! Please generate new ones.</li>
+    {% endif %}
+  </ul>
+
+  <button onclick="window.location.href='/'">🔁 Go Back to AI Generator</button>
 
 </body>
 </html>

@@ -1,46 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Content Idea Generator</title>
-    <style>
-        body { 
-            background: linear-gradient(to right, #4CAF50, #E91E63); 
-            color: white; 
-            text-align: center;
-            font-family: Arial, sans-serif; 
-        }
-        button { 
-            margin: 10px; 
-            padding: 10px; 
-            border-radius: 5px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: none; 
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Content Idea Generator</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #4CAF50, #E91E63);
+      color: white;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 5px;
+      border: none;
+      font-weight: bold;
+    }
+
+    #generate-button, #buy-now {
+      background-color: white;
+      color: #4CAF50;
+      cursor: pointer;
+    }
+
+    h2, h3 {
+      margin-top: 40px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      background: white;
+      color: black;
+      margin: 5px auto;
+      padding: 10px;
+      border-radius: 5px;
+      width: 60%;
+    }
+  </style>
 </head>
 <body>
+  <h1>AI Content Idea Generator</h1>
 
-    <h1>AI Content Idea Generator</h1>
-    <input type="text" id="niche" placeholder="Enter Niche (e.g., Fitness)">
-    
-    <select id="platform">
-        <option value="Instagram">Instagram</option>
-        <option value="TikTok">TikTok</option>
-        <option value="YouTube">YouTube</option>
-    </select>
+  <input type="text" id="niche" placeholder="Enter Niche (e.g., Fitness)">
+  <select id="platform">
+    <option value="Instagram">Instagram</option>
+    <option value="TikTok">TikTok</option>
+    <option value="YouTube">YouTube</option>
+  </select>
 
-    <button id="generate-button">🚀 Generate Ideas</button>
+  <button id="generate-button">🚀 Generate Ideas</button>
 
-    <h3>AI-Generated Ideas:</h3>
-    <ul id="ideas-container"></ul>
+  <h3>AI-Generated Ideas:</h3>
+  <ul id="ideas-container"></ul>
 
-    <h2>💰 Unlock Premium Features</h2>
-    <p>Get exclusive AI-generated content ideas for only **$10**</p>
-    <button id="buy-now">💳 Buy Now ($10 for Premium Ideas)</button>
+  <h2>Unlock Premium Features</h2>
+  <p>Get exclusive AI-generated content ideas for only <strong>$10</strong></p>
+  <button id="buy-now">🛒 Buy Now ($10 for Premium Ideas)</button>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
